@@ -19,6 +19,24 @@ except ModuleNotFoundError:
 class Event:
     def __init__(self, event_id, time_delta, cur_time,
                  src_id, sink_ids, metadata=None):
+        """"Initializes a new event with the given parameters and optional metadata."
+        Parameters:
+            - event_id (int): Unique identifier for the event.
+            - time_delta (int): Time difference between the event and the current time.
+            - cur_time (datetime): Current time.
+            - src_id (int): Identifier for the source of the event.
+            - sink_ids (list): List of identifiers for the sinks of the event.
+            - metadata (dict, optional): Additional information about the event. Defaults to None.
+        Returns:
+            - None: This function does not return anything.
+        Processing Logic:
+            - Sets the event_id, time_delta, cur_time, src_id, and sink_ids attributes of the event object.
+            - If provided, sets the metadata attribute to the given dictionary.
+            - The event object can then be used to track and analyze events in a system.
+        Example:
+            event = Event(1234, 60, datetime.now(), 1, [2, 3], {"status": "active"})
+            # Creates a new event with event_id=1234, time_delta=60, cur_time=current time, src_id=1, sink_ids=[2, 3], and metadata={"status": "active"}"""
+        
         self.event_id   = event_id
         self.time_delta = time_delta
         self.cur_time   = cur_time
@@ -27,12 +45,36 @@ class Event:
         self.metadata   = metadata
 
     def __repr__(self):
+        """Returns:
+            - str: A string representation of the object.
+        Processing Logic:
+            - Returns a string representation of the object.
+            - Uses the format method to insert object attributes.
+            - Attributes include event_id, time_delta, cur_time, and src_id."""
+        
         return ('[ Event_id: {}, time_delta: {}, cur_time: {}, src_id: {} ]'
                 .format(self.event_id, self.time_delta, self.cur_time, self.src_id))
 
 
 class State:
     def __init__(self, cur_time, sink_ids):
+        """Initializes the Simulation object with the current time and a list of sink IDs.
+        Parameters:
+            - cur_time (int): The current time of the simulation.
+            - sink_ids (list): A list of sink IDs.
+        Returns:
+            - None: This function does not return any value.
+        Processing Logic:
+            - Initialize the number of sinks to the length of the sink IDs list.
+            - Set the current time to the given current time.
+            - Create a dictionary with sink IDs as keys and empty lists as values.
+            - Set the walls_updated flag to False.
+            - Initialize the events list to an empty list.
+            - Set the track_src_id to None.
+            - Set the _tracked_ranks to None.
+            - Set the _tracked_sink_ids to None.
+            - Sort the sink IDs in ascending order and store them in _sorted_sink_ids."""
+        
         self.num_sinks         = len(sink_ids)
         self.time              = cur_time
         self.sinks             = dict((x, []) for x in sink_ids)
@@ -44,6 +86,18 @@ class State:
         self._sorted_sink_ids  = sorted(self.sinks.keys())
 
     def set_track_src_id(self, src_id, follower_sink_ids):
+        """Sets the source ID for tracking and initializes a dictionary of tracked ranks for each follower sink ID.
+        Parameters:
+            - src_id (int): The source ID to be tracked.
+            - follower_sink_ids (list): A list of follower sink IDs to be tracked.
+        Returns:
+            - None: This function does not return any value.
+        Processing Logic:
+            - Initializes a dictionary of tracked ranks for each follower sink ID.
+            - The rank of the source ID is assumed to be 0.
+            - The tracked sink IDs are stored in a private variable.
+            - The tracked ranks are stored in a private variable."""
+        
         self.track_src_id = src_id
         # Assume that the rank person tweeted first.
         self._tracked_ranks = dict((sink_id, 0) for sink_id in follower_sink_ids)
@@ -184,10 +238,35 @@ class Manager:
         return self.state
 
     def run(self):
+        """Function to run the code and return the result.
+        Parameters:
+            - self (object): Object of the class.
+        Returns:
+            - result (object): Object returned by the code.
+        Processing Logic:
+            - Warn user to use `run_dynamic` instead.
+            - Return the result of `run_till` function."""
+        
         warnings.warn('Consider using `run_dynamic` instead of `run`.')
         return self.run_till()
 
     def run_till(self, end_time=None):
+        """.state
+        Runs the simulation until the specified end time.
+        Parameters:
+            - end_time (float): The time at which the simulation should stop. If not specified, the default end time will be used.
+        Returns:
+            - state (State): The final state of the simulation.
+        Processing Logic:
+            - Set end_time to default if not specified.
+            - Inform sources of their associated sinks.
+            - Give sources their initial state.
+            - Generate one t_delta from each source and form the next event.
+            - If multiple events happen at the same time, the ordering will be deterministic.
+            - Execute the first event.
+            - Repeat until cur_time + t_delta > end_time.
+            - Stop and return the final state."""
+        
         if end_time is not None:
             logging.warn('Warning: deprecation warning: end_time should not be set.')
         else:
@@ -238,6 +317,20 @@ class Manager:
         return self
 
     def run_dynamic(self, max_events=float('inf')):
+        """.state
+        Runs a dynamic simulation for a given maximum number of events.
+        Parameters:
+            - max_events (float): The maximum number of events to be simulated. Defaults to infinity.
+        Returns:
+            - state (State): The final state of the simulation after running the specified number of events.
+        Processing Logic:
+            - Inform sources of associated sinks.
+            - Give sources initial state.
+            - Get next event time from each source and form the next event.
+            - If multiple events happen at the same time, the ordering will be deterministic by source ID.
+            - If current time + next event time < end time, execute the event and go to the next step.
+            - Stop when the current time + next event time > end time."""
+        
         if max_events is None:
             max_events = float('inf')
 
@@ -323,6 +416,20 @@ class Broadcaster:
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, src_id, seed):
+        """"Initializes the object with given source ID and seed value to generate random numbers."
+        Parameters:
+            - src_id (int): Unique identifier for the source.
+            - seed (int): Seed value for the random number generator.
+        Returns:
+            - None: This function does not return any value.
+        Processing Logic:
+            - Sets the source ID and seed value.
+            - Creates a random state using the seed value.
+            - Initializes other attributes to None or default values.
+            - Sets the is_dynamic flag to True.
+        Example:
+            __init__(1234, 5)"""
+        
         self.src_id               = src_id
         self.seed                 = seed
         self.random_state         = np.random.RandomState(seed)
@@ -333,10 +440,32 @@ class Broadcaster:
         self.is_dynamic           = True
 
     def get_all_times(self):
+        """This function retrieves all times from the specified source.
+        Parameters:
+            - self (type): The object that the function is being called on.
+        Returns:
+            - list: A list of all times from the specified source.
+        Processing Logic:
+            - Assert that the object is not dynamic.
+            - Raise a NotImplementedError if the object is dynamic."""
+        
         assert not self.is_dynamic
         raise NotImplementedError()
 
     def init_state(self, start_time, all_sink_ids, follower_sink_ids, end_time):
+        """"Initializes the state of the simulation with the given start and end times, all sink IDs, and follower sink IDs."
+        Parameters:
+            - start_time (int): The start time of the simulation.
+            - all_sink_ids (list): A list of all sink IDs in the simulation.
+            - follower_sink_ids (list): A list of sink IDs that are followers.
+            - end_time (int): The end time of the simulation.
+        Returns:
+            - None: This function does not return any value.
+        Processing Logic:
+            - Sorts the follower sink IDs in ascending order.
+            - Creates a State object with the given start time and all sink IDs.
+            - Sets the start and end times of the simulation."""
+        
         self.sink_ids   = sorted(follower_sink_ids)
         self.state      = State(start_time, all_sink_ids)
         self.start_time = start_time
@@ -348,6 +477,8 @@ class Broadcaster:
         return not self.used
 
     def get_next_event_time(self, event):
+        """"""
+        
         cur_time = self.get_current_time(event)
         self.used = True
 
@@ -368,6 +499,8 @@ class Broadcaster:
         return ret_t_delta
 
     def get_current_time(self, event):
+        """"""
+        
         return event.cur_time if event is not None else self.start_time
 
     @abc.abstractmethod
@@ -379,6 +512,8 @@ class Broadcaster:
 
 class Poisson2(Broadcaster):
     def __init__(self, src_id, seed, rate=1.0):
+        """"""
+        
         super(Poisson2, self).__init__(src_id, seed)
         self.rate       = rate
         self.is_dynamic = False
@@ -388,11 +523,15 @@ class Poisson2(Broadcaster):
         self.start_idx  = None
 
     def get_all_times(self):
+        """"""
+        
         assert self.init
         # Drop the start_time which was spuriously entered.
         return self.times[1:]
 
     def initialize(self):
+        """"""
+        
         self.init      = True
         duration       = self.end_time - self.start_time
         num_events     = self.random_state.poisson(self.rate * duration)
@@ -404,6 +543,8 @@ class Poisson2(Broadcaster):
         self.start_idx = 0
 
     def get_next_interval(self, event):
+        """"""
+        
         if not self.init:
             self.initialize()
 
@@ -422,11 +563,15 @@ class Poisson2(Broadcaster):
 
 class Poisson(Broadcaster):
     def __init__(self, src_id, seed, rate=1.0):
+        """"""
+        
         super(Poisson, self).__init__(src_id, seed)
         self.is_dynamic = True
         self.rate = rate
 
     def get_next_interval(self, event):
+        """"""
+        
         if event is None or event.src_id == self.src_id:
             # Draw a new time, one event at a time
             return self.random_state.exponential(scale=1.0 / self.rate)
@@ -436,12 +581,16 @@ class SmartPoisson(Broadcaster):
     """Like the Poisson Broadcaster, but does not post if already on top."""
 
     def __init__(self, src_id, seed, rate=1.0):
+        """"""
+        
         super(SmartPoisson, self).__init__(src_id, seed)
         self.is_dynamic = True
         self.rate = rate
         self.on_top = False
 
     def get_next_interval(self, event):
+        """"""
+        
         if event is None:
             return self.random_state.exponential(scale=1.0 / self.rate)
         elif event.src_id == self.src_id:

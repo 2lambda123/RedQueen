@@ -20,6 +20,21 @@ verbose = False
 
 
 def get_start_end_time():
+    """Get the start and end time for a specific period.
+    Parameters:
+        - None
+    Returns:
+        - Deco.Options: A Deco.Options object containing the start and end time for a specific period.
+    Processing Logic:
+        - Returns a Deco.Options object.
+        - Contains start and end time.
+        - Time is in GMT.
+        - Start time is July 1st, 2009 at 00:00:00.
+        - End time is September 1st, 2009 at 00:00:00.
+    Example:
+        >>> get_start_end_time()
+        Deco.Options(start_time=1246406400, end_time=1251763200)"""
+    
     return Deco.Options(
         start_time = 1246406400, # GMT: Wed, 01 Jul 2009 00:00:00 GMT
         end_time = 1251763200 # GMT: Tue, 01 Sep 2009 00:00:00 GMT
@@ -70,6 +85,20 @@ def get_user_repository():
 
 
 def scale_times(ts, start_time, end_time, T=None):
+    """Function:
+    Scales a list of timestamps to a specified start and end time.
+    Parameters:
+        - ts (list): List of timestamps to be scaled.
+        - start_time (float): Start time of the desired range.
+        - end_time (float): End time of the desired range.
+        - T (float, optional): Scaled period. Defaults to scaled_period if not specified.
+    Returns:
+        - list: List of scaled timestamps within the specified range.
+    Processing Logic:
+        - Calculate scaling factor based on T or default scaled_period.
+        - Filter out timestamps outside of the specified range.
+        - Scale remaining timestamps using the calculated factor."""
+    
     if T is None:
         T = scaled_period
 
@@ -79,10 +108,38 @@ def scale_times(ts, start_time, end_time, T=None):
             if start_time <= t <= end_time]
 
 def make_real_data_broadcaster(src_id, wall, start_time, end_time, T=None):
+    """"Creates a RealData object with the specified source ID and time range, scaled to the given wall time. If no time scale is provided, the original time range is used."
+    Parameters:
+        - src_id (int): The ID of the data source.
+        - wall (str): The wall time to scale the data to.
+        - start_time (str): The start time of the data range.
+        - end_time (str): The end time of the data range.
+        - T (float, optional): The time scale factor. Defaults to None.
+    Returns:
+        - RealData: A RealData object with the scaled time range.
+    Processing Logic:
+        - Creates a RealData object.
+        - Scales the time range to the given wall time.
+        - If no time scale is provided, the original time range is used."""
+    
     return RealData(src_id, scale_times(wall, start_time, end_time, T))
 
 
 def calc_avg_user_intensity(user_tweets, start_time, end_time, T=None):
+    """Calculates the average intensity of a user's tweets within a given time period.
+    Parameters:
+        - user_tweets (list): List of timestamps of a user's tweets.
+        - start_time (int): Starting timestamp of the time period.
+        - end_time (int): Ending timestamp of the time period.
+        - T (int, optional): Scaled period. Defaults to None.
+    Returns:
+        - float: Average intensity of the user's tweets within the given time period.
+    Processing Logic:
+        - Counts the number of tweets within the time period.
+        - Divides by the scaled period to get the average intensity.
+        - Ignores tweets outside of the time period.
+        - If T is not provided, uses the default scaled period."""
+    
     if T is None:
         T = scaled_period
 
@@ -101,6 +158,22 @@ user_id = 12223582 # 4 minutes
 
 
 def get_user_data_for(user_id):
+    """Function:
+    def get_user_data_for(user_id):
+        Gets user data for a given user ID.
+        Parameters:
+            - user_id (int): The ID of the user.
+        Returns:
+            - tuple: A tuple containing the user ID and user data.
+        Processing Logic:
+            - Gets the user's tweet times and checks if they are sorted.
+            - Gets the start and end time for the experiment.
+            - Checks if the user tweeted within the relevant period.
+            - Gets the user's followers and creates a wall for each relevant follower.
+            - Adds the user as a source for each relevant follower.
+            - Creates a simulation with the user as the source and their followers as sinks.
+            - Returns a tuple containing the user ID and simulation options."""
+    
     hs = get_user_repository()
 
     try:
@@ -180,6 +253,27 @@ def find_significance(user_id,
                       num_segments=24,
                       segment_length=60*60,
                       return_tweet_times=False):
+    """Finds the significance of a user's followers by analyzing their tweet times and fitting them into segments.
+    Parameters:
+        - user_id (int): The ID of the user whose followers' significance is being calculated.
+        - user_repository (UserRepository): The repository containing information about the user and their followers.
+        - num_segments (int): The number of segments to divide the day into. Default is 24.
+        - segment_length (int): The length of each segment in seconds. Default is 3600 (1 hour).
+        - return_tweet_times (bool): Whether to return the tweet times of the followers. Default is False.
+    Returns:
+        - Deco.Options: An object containing the raw significance, significance, and total number of followers.
+    Processing Logic:
+        - Finds all the followers of the user.
+        - Gets the tweet times of the followers.
+        - Divides the tweet times into segments based on the specified parameters.
+        - Calculates the significance of each follower based on their tweet times.
+        - Fills in any NaN values with the average significance of other followers.
+        - If there are still any NaN values, sets them to 1/num_segments.
+        - Returns an object containing the raw significance, significance, and total number of followers.
+    Example:
+        find_significance(12345, user_repository, num_segments=12, segment_length=1800, return_tweet_times=True)
+        # Returns an object with the raw significance, significance, total number of followers, and all tweet times of the followers."""
+    
     # 1. Find all the followers
     # 2. Find tweet times of the followers
     # 3. Fit them in num_segments - per day.
@@ -254,9 +348,24 @@ import pickle
 
 
 def make_user_file_name(user_id):
+    """"""
+    
     return os.path.join(output_folder, 'user-{}.pickle'.format(user_id, scaled_period))
 
 def save_user_setups(input_csv):
+    """Saves user setups to pickle files.
+    Parameters:
+        - input_csv (str): Path to the input CSV file.
+    Returns:
+        - tuple: A tuple containing two lists, the first one containing the user IDs for which the setup was successfully saved, and the second one containing the user IDs for which the setup failed to be saved.
+    Processing Logic:
+        - Reads the input CSV file.
+        - Creates a list of new user IDs by converting the "user_id" column of the CSV to integers.
+        - Uses multiprocessing to process the new user IDs in parallel.
+        - Saves the setup for each user in a pickle file.
+        - If there is an exception, the corresponding pickle file is removed and the error is re-raised.
+        - Returns a tuple of two lists containing the successful and failed user IDs."""
+    
     df = pd.read_csv(input_csv)
     success = []
     fails = []
