@@ -1,4 +1,3 @@
-from __future__ import print_function
 import broadcast.data.user_repo    as user_repo
 import broadcast.data.db_connector as db_connector
 import numpy                       as np
